@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitchat Local</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom CSS for Inter font and general styling */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 1.5rem; /* More rounded */
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            padding: 2.5rem; /* Increased padding */
+            width: 100%;
+            max-width: 900px; /* Increased max-width */
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+        .chat-messages {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            background-color: #f9fafb;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .message-bubble {
+            max-width: 75%;
+            padding: 0.75rem 1rem;
+            border-radius: 1.25rem; /* More rounded bubbles */
+            word-wrap: break-word;
+        }
+        .message-bubble.sent {
+            background-color: #3b82f6; /* Blue */
+            color: white;
+            align-self: flex-end;
+        }
+        .message-bubble.received {
+            background-color: #e2e8f0; /* Light gray */
+            color: #333;
+            align-self: flex-start;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+        .btn-primary {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #2563eb;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px -1px rgba(0, 0, 0, 0.15), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+        }
+        .btn-secondary {
+            background-color: #6b7280;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #4b5563;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px -1px rgba(0, 0, 0, 0.15), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+        }
+        .input-group {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-end;
+        }
+        .input-group input {
+            flex-grow: 1;
+        }
+        .copy-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.25rem;
+            color: #6b7280;
+            transition: color 0.2s ease-in-out;
+            /* Adjust positioning relative to its parent .relative div */
+            position: absolute;
+            top: 0.25rem; /* Adjusted to align with label text */
+            right: 0;
+            z-index: 10; /* Ensure button is above textarea */
+        }
+        .copy-button:hover {
+            color: #3b82f6;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-5">
+    <div class="container">
+        <h1 class="text-4xl font-extrabold text-center text-gray-800 mb-6">Bitchat Local</h1>
+        <p class="text-center text-gray-600 mb-8">
+            A peer-to-peer chat application that works without internet after initial setup.
+            <br>
+            <strong>Instructions:</strong>
+            <ol class="list-decimal list-inside text-left mx-auto max-w-md mt-4">
+                <li>One user clicks "Create Offer" and copies the Offer SDP and ICE Candidates.</li>
+                <li>The other user pastes the Offer SDP and ICE Candidates into their respective fields and clicks "Create Answer". They then copy their Answer SDP and ICE Candidates.</li>
+                <li>The first user pastes the Answer SDP and ICE Candidates into their respective fields and clicks "Connect".</li>
+                <li>Once connected, you can chat!</li>
+            </ol>
+        </p>
+
+        <!-- Connection Setup Section -->
+        <div class="bg-blue-50 p-6 rounded-xl shadow-inner border border-blue-200">
+            <h2 class="text-2xl font-bold text-blue-800 mb-4">Connection Setup</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <!-- Offer SDP Section -->
+                <div class="relative">
+                    <label for="offerSdpInput" class="block text-gray-700 text-sm font-bold mb-2">Offer SDP:</label>
+                    <button class="copy-button" onclick="copyToClipboard('offerSdpInput')">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                    </button>
+                    <textarea id="offerSdpInput" class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                </div>
+                <!-- Answer SDP Section -->
+                <div class="relative">
+                    <label for="answerSdpInput" class="block text-gray-700 text-sm font-bold mb-2">Answer SDP:</label>
+                    <button class="copy-button" onclick="copyToClipboard('answerSdpInput')">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                    </button>
+                    <textarea id="answerSdpInput" class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <!-- Offer ICE Candidates Section -->
+                <div class="relative">
+                    <label for="offerIceCandidatesInput" class="block text-gray-700 text-sm font-bold mb-2">Offer ICE Candidates:</label>
+                    <button class="copy-button" onclick="copyToClipboard('offerIceCandidatesInput')">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                    </button>
+                    <textarea id="offerIceCandidatesInput" class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                </div>
+                <!-- Answer ICE Candidates Section -->
+                <div class="relative">
+                    <label for="answerIceCandidatesInput" class="block text-gray-700 text-sm font-bold mb-2">Answer ICE Candidates:</label>
+                    <button class="copy-button" onclick="copyToClipboard('answerIceCandidatesInput')">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                    </button>
+                    <textarea id="answerIceCandidatesInput" class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap justify-center gap-4">
+                <button id="createOfferBtn" class="btn btn-primary">Create Offer</button>
+                <button id="createAnswerBtn" class="btn btn-primary">Create Answer</button>
+                <button id="connectBtn" class="btn btn-secondary">Connect</button>
+            </div>
+
+            <div class="mt-6 text-center text-gray-700">
+                <p>Connection Status: <span id="connectionStatus" class="font-semibold text-red-600">Disconnected</span></p>
+            </div>
+        </div>
+
+        <!-- Chat Section -->
+        <div class="bg-gray-50 p-6 rounded-xl shadow-inner border border-gray-200">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Chat</h2>
+            <div id="chatMessages" class="chat-messages mb-4">
+                <!-- Chat messages will appear here -->
+            </div>
+            <div class="input-group">
+                <input type="text" id="messageInput" placeholder="Type your message..." class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                <button id="sendMessageBtn" class="btn btn-primary">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables for WebRTC
+        let peerConnection;
+        let dataChannel;
+        let isInitiator = false; // Flag to determine if this peer initiated the connection
+        let localIceCandidates = []; // Array to store ICE candidates generated locally
+        let remoteIceCandidatesQueue = []; // Queue for remote ICE candidates to be added
+
+        // Get DOM elements
+        const createOfferBtn = document.getElementById('createOfferBtn');
+        const createAnswerBtn = document.getElementById('createAnswerBtn');
+        const connectBtn = document.getElementById('connectBtn');
+        const sendMessageBtn = document.getElementById('sendMessageBtn');
+
+        const offerSdpInput = document.getElementById('offerSdpInput');
+        const answerSdpInput = document.getElementById('answerSdpInput');
+        const offerIceCandidatesInput = document.getElementById('offerIceCandidatesInput');
+        const answerIceCandidatesInput = document.getElementById('answerIceCandidatesInput');
+        const messageInput = document.getElementById('messageInput');
+        const chatMessagesDiv = document.getElementById('chatMessages');
+        const connectionStatusSpan = document.getElementById('connectionStatus');
+
+        /**
+         * Updates the connection status display.
+         * @param {string} status - The current connection status.
+         * @param {string} colorClass - Tailwind CSS class for text color.
+         */
+        function updateConnectionStatus(status, colorClass) {
+            connectionStatusSpan.textContent = status;
+            connectionStatusSpan.className = `font-semibold ${colorClass}`;
+        }
+
+        /**
+         * Appends a message bubble to the chat display.
+         * @param {string} message - The message text.
+         * @param {string} type - 'sent' or 'received'.
+         */
+        function appendMessage(message, type) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message-bubble', type);
+            messageElement.textContent = message;
+            chatMessagesDiv.appendChild(messageElement);
+            chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight; // Auto-scroll to bottom
+        }
+
+        /**
+         * Initializes the RTCPeerConnection and sets up event listeners.
+         */
+        function initPeerConnection() {
+            // Configuration for RTCPeerConnection. No STUN/TURN servers for "no internet"
+            // For a truly disconnected environment, STUN/TURN are not applicable anyway.
+            // If peers are behind complex NATs or firewalls, direct connection might fail.
+            peerConnection = new RTCPeerConnection({
+                iceServers: [] // No STUN/TURN servers to ensure "no internet" dependency
+            });
+
+            // Event listener for ICE candidates generated by the local peer
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    localIceCandidates.push(event.candidate.toJSON());
+                    // Display local ICE candidates for manual exchange
+                    if (isInitiator) {
+                        offerIceCandidatesInput.value = JSON.stringify(localIceCandidates, null, 2);
+                    } else {
+                        answerIceCandidatesInput.value = JSON.stringify(localIceCandidates, null, 2);
+                    }
+                }
+            };
+
+            // Event listener for when a data channel is received (for the answering peer)
+            peerConnection.ondatachannel = (event) => {
+                dataChannel = event.channel;
+                setupDataChannelListeners();
+                updateConnectionStatus('Connected', 'text-green-600');
+                console.log('Data channel received!');
+            };
+
+            // Event listener for changes in connection state
+            peerConnection.onconnectionstatechange = () => {
+                console.log('Connection state change:', peerConnection.connectionState);
+                switch (peerConnection.connectionState) {
+                    case 'connected':
+                        updateConnectionStatus('Connected', 'text-green-600');
+                        break;
+                    case 'disconnected':
+                    case 'failed':
+                        updateConnectionStatus('Disconnected', 'text-red-600');
+                        break;
+                    case 'closed':
+                        updateConnectionStatus('Closed', 'text-gray-600');
+                        break;
+                    case 'new':
+                        updateConnectionStatus('New', 'text-yellow-600');
+                        break;
+                    case 'connecting':
+                        updateConnectionStatus('Connecting...', 'text-orange-600');
+                        break;
+                }
+            };
+
+            // Add any queued remote ICE candidates if they arrived before the peer connection was ready
+            while (remoteIceCandidatesQueue.length > 0) {
+                const candidate = remoteIceCandidatesQueue.shift();
+                peerConnection.addIceCandidate(new RTCIceCandidate(candidate)).catch(e => console.error('Error adding queued ICE candidate:', e));
+            }
+        }
+
+        /**
+         * Sets up event listeners for the data channel.
+         */
+        function setupDataChannelListeners() {
+            dataChannel.onopen = () => {
+                console.log('Data channel is open!');
+                updateConnectionStatus('Connected', 'text-green-600');
+                sendMessageBtn.disabled = false;
+                messageInput.disabled = false;
+            };
+
+            dataChannel.onmessage = (event) => {
+                console.log('Message received:', event.data);
+                appendMessage(event.data, 'received');
+            };
+
+            dataChannel.onclose = () => {
+                console.log('Data channel closed!');
+                updateConnectionStatus('Disconnected', 'text-red-600');
+                sendMessageBtn.disabled = true;
+                messageInput.disabled = true;
+            };
+
+            dataChannel.onerror = (error) => {
+                console.error('Data channel error:', error);
+                updateConnectionStatus('Error', 'text-red-600');
+            };
+        }
+
+        /**
+         * Creates an SDP offer.
+         */
+        async function createOffer() {
+            isInitiator = true;
+            localIceCandidates = []; // Clear previous candidates
+            updateConnectionStatus('Creating Offer...', 'text-orange-600');
+            initPeerConnection(); // Initialize peer connection for the initiator
+
+            // Create a data channel for chat
+            dataChannel = peerConnection.createDataChannel('chat-channel');
+            setupDataChannelListeners();
+
+            try {
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+                // Display the offer SDP for the user to copy
+                offerSdpInput.value = JSON.stringify(peerConnection.localDescription, null, 2);
+                updateConnectionStatus('Offer Created. Copy SDP & ICE Candidates.', 'text-blue-600');
+            } catch (error) {
+                console.error('Error creating offer:', error);
+                updateConnectionStatus('Error Creating Offer', 'text-red-600');
+            }
+        }
+
+        /**
+         * Creates an SDP answer based on a received offer.
+         */
+        async function createAnswer() {
+            isInitiator = false;
+            localIceCandidates = []; // Clear previous candidates
+            updateConnectionStatus('Creating Answer...', 'text-orange-600');
+            initPeerConnection(); // Initialize peer connection for the answerer
+
+            try {
+                const remoteOfferSdp = JSON.parse(offerSdpInput.value);
+                const remoteOfferIceCandidates = JSON.parse(offerIceCandidatesInput.value);
+
+                // Set the remote description (offer from the other peer)
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(remoteOfferSdp));
+                console.log('Remote offer SDP set.');
+
+                // Add remote ICE candidates to the peer connection
+                remoteOfferIceCandidates.forEach(candidate => {
+                    peerConnection.addIceCandidate(new RTCIceCandidate(candidate)).catch(e => console.error('Error adding remote ICE candidate:', e));
+                });
+                console.log('Remote ICE candidates added.');
+
+                // Create an answer
+                const answer = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answer);
+                // Display the answer SDP for the user to copy
+                answerSdpInput.value = JSON.stringify(peerConnection.localDescription, null, 2);
+                updateConnectionStatus('Answer Created. Copy SDP & ICE Candidates.', 'text-blue-600');
+            } catch (error) {
+                console.error('Error creating answer:', error);
+                updateConnectionStatus('Error Creating Answer', 'text-red-600');
+            }
+        }
+
+        /**
+         * Connects the peer by setting the remote answer SDP and adding remote ICE candidates.
+         */
+        async function connect() {
+            updateConnectionStatus('Connecting...', 'text-orange-600');
+            try {
+                const remoteAnswerSdp = JSON.parse(answerSdpInput.value);
+                const remoteAnswerIceCandidates = JSON.parse(answerIceCandidatesInput.value);
+
+                // Set the remote description (answer from the other peer)
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(remoteAnswerSdp));
+                console.log('Remote answer SDP set.');
+
+                // Add remote ICE candidates to the peer connection
+                remoteAnswerIceCandidates.forEach(candidate => {
+                    peerConnection.addIceCandidate(new RTCIceCandidate(candidate)).catch(e => console.error('Error adding remote ICE candidate:', e));
+                });
+                console.log('Remote ICE candidates added.');
+
+                updateConnectionStatus('Connection Attempted. Check status.', 'text-blue-600');
+            } catch (error) {
+                console.error('Error connecting:', error);
+                updateConnectionStatus('Error Connecting', 'text-red-600');
+            }
+        }
+
+        /**
+         * Sends a message via the data channel.
+         */
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (message && dataChannel && dataChannel.readyState === 'open') {
+                dataChannel.send(message);
+                appendMessage(message, 'sent');
+                messageInput.value = ''; // Clear input field
+            } else if (dataChannel && dataChannel.readyState !== 'open') {
+                console.warn('Data channel is not open. Cannot send message.');
+                // Optionally show a message to the user
+            } else {
+                console.warn('No data channel or empty message.');
+            }
+        }
+
+        /**
+         * Copies the content of a specified input element to the clipboard.
+         * @param {string} elementId - The ID of the input or textarea element to copy from.
+         */
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.select();
+                element.setSelectionRange(0, 99999); // For mobile devices
+                document.execCommand('copy');
+                // You can add a visual feedback here, e.g., a temporary "Copied!" message
+                console.log(`Copied content from ${elementId} to clipboard.`);
+            }
+        }
+
+        // Event Listeners for buttons
+        createOfferBtn.addEventListener('click', createOffer);
+        createAnswerBtn.addEventListener('click', createAnswer);
+        connectBtn.addEventListener('click', connect);
+        sendMessageBtn.addEventListener('click', sendMessage);
+
+        // Allow sending message with Enter key
+        messageInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter' && !event.shiftKey) { // Shift+Enter for new line
+                event.preventDefault(); // Prevent default Enter behavior (e.g., new line in textarea)
+                sendMessage();
+            }
+        });
+
+        // Initial state: disable send button and message input
+        sendMessageBtn.disabled = true;
+        messageInput.disabled = true;
+    </script>
+</body>
+</html>
