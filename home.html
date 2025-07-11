@@ -6,6 +6,7 @@
     <title>P2Plex</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="manifest" href="/manifest.json">
     <style>
         /* Custom CSS for Inter font and general styling */
         body {
@@ -593,5 +594,18 @@
         sendMessageBtn.disabled = true;
         messageInput.disabled = true;
     </script>
+    <script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+                .then(registration => {
+                    console.log('Service Worker registered! Scope:', registration.scope);
+                })
+                .catch(err => {
+                    console.log('Service Worker registration failed:', err);
+                });
+        });
+    }
+</script>
 </body>
 </html>
