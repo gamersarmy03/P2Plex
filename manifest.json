@@ -1,0 +1,16 @@
+{
+  "name": "P2Plex",
+  "short_name": "P2Plex",
+  "description": "PeerLink offers secure, offline chatting using SDP and ICE.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
